@@ -17,6 +17,7 @@ __pycache__/
 
 # Compressed data/zips
 *.tar.gz
+*.zip
 
 # data folder
 data/
