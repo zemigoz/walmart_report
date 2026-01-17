@@ -17,31 +17,33 @@ from data_display import *
 ####################################################################
 # CONFIGURATION
 ####################################################################
-ALL_FRUITS_CSV = Path("fruit-prices-2023.csv")
+# ALL_FRUITS_CSV = Path("fruit-prices-2023.csv")
 
 YUGIOH_CSV = Path("yugioh-ccd-2025SEP12-163128.csv")
 WALMART_CSV = Path("Walmart_Sales.csv")
+
+OUTPUT_FOLDER = Path("output")
+TOP_SALES_CSV = OUTPUT_FOLDER / Path("top_sales.csv")
+TOP_TEMP_CSV = OUTPUT_FOLDER / Path("top_temp.csv")
+TOP_FUEL_CSV = OUTPUT_FOLDER / Path("top_fuel.csv")
+TOP_CPI_CSV = OUTPUT_FOLDER / Path("top_cpi.csv")
+TOP_UNEMPLOYMENT_CSV = OUTPUT_FOLDER / Path("top_unemployment.csv")
+
+TOP_K = 10
 
 ####################################################################
 # MAIN WALKTHRU
 ####################################################################
 def main():
-    # to_wrap = pd.read_csv(YUGIOH_CSV)
-    # yugioh_data = Dataset(to_wrap)
-
-    # print(yugioh_data.info())
-    # print(yugioh_data.head())
-    # print(yugioh_data.columns)
-    # ['Unnamed: 0', 'name', 'description', 'set_id', 'rarity', 'price',
-    #    'volatility', 'type', 'sub_type', 'attribute', 'rank', 'attack',
-    #    'defense', 'set_name', 'set_release', 'name_official', 'index',
-    #    'index_market', 'join_id']
-
-    # print(yugioh_data.rarity_distribution("type"))
-
     to_wrap = pd.read_csv(WALMART_CSV)
     walmart_data = Dataset(to_wrap)
     walmart_data.to_datetime(column="Date", dayfirst=True)
+    del to_wrap
+
+    null_counts = walmart_data.isnull().any(axis=1).sum()
+    print(f'There are {null_counts} entries with null values. Dropping all of those rows')
+
+    walmart_data.dropna() #modifies in-place
 
     # print(walmart_data.info())
     # print(walmart_data.head())
@@ -50,8 +52,15 @@ def main():
     # ['Store', 'Date', 'Weekly_Sales', 'Holiday_Flag', 'Temperature',
     #    'Fuel_Price', 'CPI', 'Unemployment']
 
-    
+    # OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
+    # cols = list(walmart_data.columns)
+    # select_columns = [cols[2]] + cols[4:]
+    # output_column_paths = [TOP_SALES_CSV, TOP_TEMP_CSV, TOP_FUEL_CSV, TOP_CPI_CSV, TOP_UNEMPLOYMENT_CSV]
+
+    # for i in range(len(select_columns)):
+    #     temp_data = walmart_data.nlargest(10, column=select_columns[i])
+    #     temp_data.to_csv(output_column_paths[i],index=False)
 
     ###############################
     #      Plot Scatterplots      #
@@ -83,10 +92,7 @@ def main():
     # Plot Categorical Pie Charts #
     ###############################
 
-    # display_pie_chart(data=yugioh_data, column="rarity", threshold = 2.8e-2, title="Distribution of Yu-Gi-Oh! Rarities")
-    # display_pie_chart(data=yugioh_data, column="volatility", threshold = 2.8e-2, title="Distribution of Yu-Gi-Oh! Volatility in the market")
-    # display_pie_chart(data=yugioh_data, column="type", threshold = 2.8e-5, title="Distribution of Yu-Gi-Oh! Card Types")
-    # display_pie_chart(data=yugioh_data, column="rank", threshold = 3.3e-2, title="Distribution of Yu-Gi-Oh! Card Ranks")
+    # display_pie_chart(data=walmart_data, column="Holiday_Flag", threshold = 2.8e-2, title="Distribution of Holiday Weeks")
 
 
 if __name__ == "__main__":

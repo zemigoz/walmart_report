@@ -15,15 +15,11 @@ class Dataset:
     def rarity_distribution(self, column: str):
         # return self.data["rarity"].value_counts().to_dict()
         # print(type(yugioh_data['rarity'].unique()))
-        if column not in self.columns:
-            raise IndexError("Inputted string is not a column in dataset")
-
+        self._check_column(column)
         return self.data[column].value_counts()
     
     def to_datetime(self, column: str, dayfirst=False):
-        if column not in self.columns:
-            raise IndexError("Inputted string is not a column in dataset")
-
+        self._check_column(column)
         self.data[column] = pd.to_datetime(self.data[column], dayfirst=dayfirst)
 
     # Wrapper functions
@@ -39,10 +35,28 @@ class Dataset:
 
     def describe(self):
         return self.data.describe()
+    
+    def nlargest(self, num: int, column: str):
+        self._check_column(column)
+        return self.data.nlargest(num, column)
+
+    def nsmallest(self, num: int, column: str):
+        self._check_column(column)
+        return self.data.nsmallest(num, column)
+
+    def isnull(self):
+        return self.data.isnull()
 
     @property
     def shape(self):
         return self.data.shape
+
+    def _check_column(self, column):
+        if column not in self.columns:
+            raise IndexError("Inputted string is not a column in dataset")
+
+    def dropna(self):
+        self.data = self.data.dropna()
 
     # Hidden wrapper functions
     def __getitem__(self, key):
