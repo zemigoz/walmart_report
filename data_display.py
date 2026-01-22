@@ -1,19 +1,13 @@
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
+import seaborn as sb
 
 from scipy.interpolate import UnivariateSpline, BSpline
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 from typing import TypedDict
 
 from data_obj import *
-
-class DisplayDict(TypedDict):
-    num_total_plots: int
-    num_cols: int
-    num_rows: int
-    num_per_plots: int
-    start: int
 
 def display_pie_chart(data: Dataset, column: str, threshold: float, title: str) -> None:
     rarity_dist = data.rarity_distribution(column=column)
@@ -115,3 +109,28 @@ def display_plot(
     axis.yaxis.set_major_locator(MultipleLocator(interval))
 
     plt.show()
+
+def two_lines_plot(dataset: Dataset, col_one: str, col_two: str):
+    plt.figure(figsize=(20,8))
+
+    if not(col_one in dataset.columns and col_two in dataset.columns):
+        raise KeyError("A column inserted is not apart of dataset")
+    
+    plt.plot(dataset.index, dataset[col_one], color = "deeppink", label = col_one)
+    plt.plot(dataset.index, dataset[col_two], color = "green", label = col_two)
+    plt.legend()
+    plt.title(f"{col_one} & {col_two} over time (averaged across each month and store)")
+
+    plt.show()
+
+def correlation_heatmap(dataset: Dataset):
+    corr = dataset.data.corr()
+    plt.figure(figsize=(10, 10))
+    sb.heatmap(
+        corr,
+        annot=True,
+        cmap="coolwarm",
+    )
+    plt.title(f"Correlation Matrix")
+    plt.show()
+

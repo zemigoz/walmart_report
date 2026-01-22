@@ -24,6 +24,7 @@ data/
 
 #My Notes
 notes.md
+*.ipynb
 
 #data files
 *.csv
