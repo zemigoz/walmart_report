@@ -24,6 +24,7 @@ from matplotlib.ticker import FuncFormatter, MultipleLocator
 from data_obj import *
 from data_display import *
 from models import *
+from run_models import *
 
 ####################################################################
 # CONFIGURATION
@@ -42,7 +43,7 @@ TOP_UNEMPLOYMENT_CSV = OUTPUT_FOLDER / Path("top_unemployment.csv")
 
 TOP_K = 10
 
-RNG_SEED = 0
+RNG_SEED = 314
 NUM_FOLDS = 10
 ALPHA_LEARNING = 1e-1
 NUM_TREES = 100
@@ -56,27 +57,26 @@ def main():
     del to_wrap
 
     walmart_data.to_datetime(column="Date", dayfirst=True)
-    null_counts = walmart_data.isnull().any(axis=1).sum()
-    print(f'There are {null_counts} entries with null values. Dropping all of those rows')
 
-    walmart_data.dropna() #modifies in-place
-    # print(walmart_data.head())
+    null_counts = walmart_data.isnull().any(axis=1).sum()
+    num_duplicates = walmart_data.data.duplicated().sum()
+    print(f'There are {null_counts} entries with null values. Dropping all of those rows')
+    print(f"There are {num_duplicates} entries with duplicate rows. Dropping all of those rows")
+
+    walmart_data.dropna() 
+    walmart_data.drop_duplicates()
 
     # Aggregated each store to same week
-    transformed = walmart_data.normalize()
-    temp = transformed.sort_values("Date")
+    # transformed = walmart_data.normalize()
+    # temp = transformed.sort_values("Date")
     # transformed_data = temp.groupby("Date").mean()
     # transformed_data_week = Dataset(transformed_data)
 
     # Aggregated each store to same month (ignore type-checker error on .to_timestamp())
-    temp["Date"] = pd.to_datetime(temp["Date"]).dt.to_period("M")
-    transformed_data = temp.groupby("Date").mean()
-    transformed_data.index = transformed_data.index.to_timestamp()
-    transformed_data_month = Dataset(transformed_data)
-
-    # print(walmart_data.info())
-    # print(walmart_data.head())
-    # print(walmart_data.columns)
+    # temp["Date"] = pd.to_datetime(temp["Date"]).dt.to_period("M")
+    # transformed_data = temp.groupby("Date").mean()
+    # transformed_data.index = transformed_data.index.to_timestamp()
+    # transformed_data_month = Dataset(transformed_data)
 
     #######################################
     #        Top K In Each Column         #
@@ -95,6 +95,12 @@ def main():
     #######################################
     #             Quick Plot              #
     #######################################
+    # transformed = walmart_data.normalize()
+    # temp = transformed.sort_values("Date")
+    # temp["Date"] = pd.to_datetime(temp["Date"]).dt.to_period("M")
+    # transformed_data = temp.groupby("Date").mean()
+    # transformed_data.index = transformed_data.index.to_timestamp()
+    # transformed_data_month = Dataset(transformed_data)
     # print(transformed_data_month.index)
 
     # x = transformed_data_month.data.index
@@ -110,10 +116,10 @@ def main():
     #######################################
     #           Model Testing             #
     #######################################
+    # run_models(data=walmart_data, k_folds=NUM_FOLDS, n_trees=NUM_TREES, seed=RNG_SEED, alpha_learning=ALPHA_LEARNING)
     model_dataset = walmart_data.model_pipeline(scale = True)
-    # model_dataset["Date_continuous"] = model_dataset.index.year + (model_dataset.index.month-1)/12
-    # model_dataset = model_dataset.set_index("Date_continuous")
-
+    data = model_dataset.data
+    data = data.sort_values("Date_Continuous")
 
     # print(walmart_data.head(2))
     # print(model_dataset.head())
@@ -139,15 +145,136 @@ def main():
 
     performance = {}
 
+    col = [
+        "Date", 
+        'month', 
+        "Weekly_Sales", 
+        "Store",
+        "Log_Weekly_Sales"
+    ]
+    x = data.drop(columns=col, axis=1)
+    y = data["Log_Weekly_Sales"]
+    
+    print("\nAll new features")
     for model_name, model in models.items():
-        # perf_dict = cross_validate(dataset = transformed_data_month, model = model, folds = NUM_FOLDS, seed = RNG_SEED)
-        perf_dict = single_run(dataset = model_dataset, model=model)
+        perf_dict = cross_validate(x=x, y=y, model = model, folds = NUM_FOLDS)
+        # perf_dict = single_run(x=x, y=y, model=model)
         performance[model_name] = perf_dict
 
     pd.set_option("display.float_format", "{:.4f}".format)
     perf_df = pd.DataFrame(performance).T 
 
     print(perf_df)
+
+    
+    # col = [
+    #     "Cos_Month", 
+    #     "Sin_Month", 
+    #     "Peak_Season", 
+    #     'Sales_Lag_One', 
+    #     'Sales_Lag_Two', 
+    #     # 'Store_Sales_Encode',
+    #     "Log_Weekly_Sales",
+    #     "Date",
+    #     "month",
+    #     "Weekly_Sales",
+    #     "Store"
+    # ]
+    # x = data.drop(columns = col, axis = 1)
+    # # print(x.columns)
+    # y = data["Weekly_Sales"]
+
+    # # print("\nBasic features")
+    # # print("-" * 75)
+    # # for model_name, model in models.items():
+    # #     perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
+    # #     # perf_dict = single_run(x = x, y = y, model = model)
+    # #     performance[model_name] = perf_dict
+
+    # # pd.set_option("display.float_format", "{:.4f}".format)
+    # # perf_df = pd.DataFrame(performance).T 
+
+    # # print(perf_df)
+
+    # col = [
+    #     "Sales_Lag_One",
+    #     "Sales_Lag_Two",
+    #     "Peak_Season",
+    #     "Cos_Month",
+    #     "Sin_Month",
+    #     "Log_Weekly_Sales", 
+    #     "Date", 
+    #     'month', 
+    #     "Weekly_Sales", 
+    #     "Store"
+    # ]
+    # x = data.drop(columns = col, axis=1)
+    # y = data["Log_Weekly_Sales"]
+
+    # print("\nWith Log transformation on y")
+    # print("-" * 75)
+    # for model_name, model in models.items():
+    #     perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
+    #     # perf_dict = single_run(x = x, y = y, model = model)
+    #     performance[model_name] = perf_dict
+
+    # pd.set_option("display.float_format", "{:.4f}".format)
+    # perf_df = pd.DataFrame(performance).T 
+
+    # print(perf_df)
+
+    # col = [
+    #     "Sales_Lag_One",
+    #     "Sales_Lag_Two",
+    #     # "Peak_Season",
+    #     "Cos_Month",
+    #     "Sin_Month",
+    #     "Log_Weekly_Sales", 
+    #     "Date", 
+    #     'month', 
+    #     "Weekly_Sales", 
+    #     "Store"
+    # ]
+    # x = data.drop(columns = col, axis=1)
+    # # y = data["Log_Weekly_Sales"]
+
+    # print("\nWith 'Peak_Season' and log transform")
+    # print("-" * 75)
+    # for model_name, model in models.items():
+    #     perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
+    #     # perf_dict = single_run(x = x, y = y, model = model)
+    #     performance[model_name] = perf_dict
+
+    # pd.set_option("display.float_format", "{:.4f}".format)
+    # perf_df = pd.DataFrame(performance).T 
+
+    # print(perf_df)
+
+    # col = [
+    #     "Log_Weekly_Sales", 
+    #     "Date", 
+    #     'month', 
+    #     "Weekly_Sales", 
+    #     "Store"
+    # ]
+    # x = data.drop(columns = col, axis=1)
+    # y = data["Log_Weekly_Sales"]
+
+    # # print(np.any(y <= 0))
+    # # print(np.isnan(x).sum())
+    # # print(np.isinf(x).sum())
+
+    # print("\nWith all new features")
+    # print("-" * 75)
+    # for model_name, model in models.items():
+    #     # perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
+    #     perf_dict = single_run(x = x, y = y, model = model)
+    #     performance[model_name] = perf_dict
+
+    # pd.set_option("display.float_format", "{:.4f}".format)
+    # perf_df = pd.DataFrame(performance).T 
+
+    # print(perf_df)
 
     #######################################
     #    Plot Feature Comparison Plots    #
@@ -171,7 +298,6 @@ def main():
     # correlation_heatmap(dataset=walmart_data)
     # correlation_heatmap(dataset=transformed_data_week)
     # correlation_heatmap(dataset=transformed_data_month)
-
 
     #######################################
     #          Plot Scatterplot          #
@@ -198,6 +324,7 @@ def main():
     #         holidays=False, 
     #         options = 1
     #     )
+
 
     #######################################
     #     Plot Categorical Pie Charts     #
