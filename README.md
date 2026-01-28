@@ -8,3 +8,6 @@ There are 8 columns in the dataset.
 
 1) 'Store' (int): Categorical identifier of 45 sampled Walmart stores
 2) 'Date' (string in DD-MM-YYYY): 
+
+
+https://online.stat.psu.edu/stat501/book/export/html/995

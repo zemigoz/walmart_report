@@ -35,11 +35,7 @@ from run_models import *
 WALMART_CSV = Path("Walmart_Sales.csv")
 
 OUTPUT_FOLDER = Path("output")
-TOP_SALES_CSV = OUTPUT_FOLDER / Path("top_sales.csv")
-TOP_TEMP_CSV = OUTPUT_FOLDER / Path("top_temp.csv")
-TOP_FUEL_CSV = OUTPUT_FOLDER / Path("top_fuel.csv")
-TOP_CPI_CSV = OUTPUT_FOLDER / Path("top_cpi.csv")
-TOP_UNEMPLOYMENT_CSV = OUTPUT_FOLDER / Path("top_unemployment.csv")
+STORE_FOLDER = OUTPUT_FOLDER / Path("stores")
 
 TOP_K = 10
 
@@ -80,15 +76,22 @@ def main():
     transformed_data.index = transformed_data.index.to_timestamp() #back to timestamp for plot
     transformed_data_month = Dataset(transformed_data)
 
+    OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
+    STORE_FOLDER.mkdir(parents=True, exist_ok=True)
+
     #######################################
     #        Top K In Each Column         #
     #######################################
+    # top_sales_csv = OUTPUT_FOLDER / Path("top_sales.csv")
+    # top_temp_csv = OUTPUT_FOLDER / Path("top_temp.csv")
+    # top_fuel_csv = OUTPUT_FOLDER / Path("top_fuel.csv")
+    # top_cpi_csv = OUTPUT_FOLDER / Path("top_cpi.csv")
+    # top_unemployment_csv = OUTPUT_FOLDER / Path("top_unemployment.csv")
 
-    # OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
 
     # cols = list(walmart_data.columns)
     # select_columns = [cols[2]] + cols[4:]
-    # output_column_paths = [TOP_SALES_CSV, TOP_TEMP_CSV, TOP_FUEL_CSV, TOP_CPI_CSV, TOP_UNEMPLOYMENT_CSV]
+    # output_column_paths = [top_sales_csv, top_temp_csv, top_fuel_csv, top_cpi_csv, top_unemployment_csv]
 
     # for i in range(len(select_columns)):
     #     temp_data = walmart_data.nlargest(10, column=select_columns[i])
@@ -106,7 +109,9 @@ def main():
     # cols.remove("Holiday_Flag")
 
     # for col in cols:
-    #     two_lines_plot(dataset=transformed_data_month, col_one="Weekly_Sales", col_two=col)
+    #     title = f"Weekly_Sales_&_{col}_comparison_plot.png"
+    #     output_file = OUTPUT_FOLDER / title
+    #     two_lines_plot(dataset=transformed_data_month, col_one="Weekly_Sales", col_two=col, output_file=output_file)
 
     #######################################
     #      Plot Correlation Matrices      #
@@ -114,47 +119,59 @@ def main():
 
     # print(transformed_data_month)
 
-    # correlation_heatmap(dataset=walmart_data)
+    # corr_whole = OUTPUT_FOLDER / Path("correlation_whole_dataset.png")
+    # corr_avg_month = OUTPUT_FOLDER / Path("correlation_average_month.png")
+
+    # correlation_heatmap(dataset=walmart_data, output_file=corr_whole)
     # # correlation_heatmap(dataset=transformed_data_week)
-    # correlation_heatmap(dataset=transformed_data_month)
+    # correlation_heatmap(dataset=transformed_data_month, output_file= corr_avg_month)
 
     #######################################
     #          Plot Scatterplot          #
     #######################################
-    
-    # start, end = 1, 1
+
+    # start, end = 1, 45
     # for i in range(start, end + 1):
+    #     output_file = STORE_FOLDER / Path(f"store_{i}")
+        
     #     display_plot(
     #         data=walmart_data,
-    #         store_num=i,
-    #         holidays=True, 
+    #         store_num=i, 
+    #         output_file=output_file,
     #         options=0
     #     )
 
     #######################################
     #             Plot Splines            #
     #######################################
-
-    # start, end = 1, 1
+    # start, end = 1, 49
     # for i in range(start, end + 1):
+    #     output_file = STORE_FOLDER / Path(f"store_spline_{i}")
+
     #     display_plot(
     #         data=walmart_data, 
     #         store_num=i,
-    #         holidays=False, 
+    #         output_file=output_file,
     #         options = 1
     #     )
-
 
     #######################################
     #     Plot Categorical Pie Charts     #
     #######################################
+    # output_file = OUTPUT_FOLDER / Path("holiday_flag_pie_chart")
 
-    # display_pie_chart(data=walmart_data, column="Holiday_Flag", threshold = 2.8e-2, title="Distribution of Holiday Weeks")
+    # display_pie_chart(data=walmart_data, column="Holiday_Flag", threshold = 2.8e-2, title="Distribution of Holiday Weeks", output_file=output_file)
 
     #######################################
     #           Model Testing             #
     #######################################
-    # run_models(dataset=walmart_data, k_folds=NUM_FOLDS, n_trees=NUM_TREES, seed=RNG_SEED, alpha_learning=ALPHA_LEARNING)
+    output_file = OUTPUT_FOLDER / Path("all_model_metrics.csv")
+
+    perf_df = run_models(dataset=walmart_data, k_folds=NUM_FOLDS, n_trees=NUM_TREES, seed=RNG_SEED, alpha_learning=ALPHA_LEARNING)
+    perf_df = perf_df.reset_index()
+    perf_df = perf_df.rename(columns={"index": "Model Name"})
+    perf_df.to_csv(output_file, index=False)
+
 
 if __name__ == "__main__":
     start_time = time.time()

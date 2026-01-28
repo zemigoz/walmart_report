@@ -217,3 +217,4 @@ def run_models(dataset: Dataset, k_folds: int, n_trees: int, seed: int, alpha_le
     perf_df = pd.DataFrame(performance).T 
 
     print(perf_df)
+    return perf_df
