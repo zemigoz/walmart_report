@@ -30,8 +30,8 @@ from run_models import *
 # CONFIGURATION
 ####################################################################
 # ALL_FRUITS_CSV = Path("fruit-prices-2023.csv")
+# YUGIOH_CSV = Path("yugioh-ccd-2025SEP12-163128.csv")
 
-YUGIOH_CSV = Path("yugioh-ccd-2025SEP12-163128.csv")
 WALMART_CSV = Path("Walmart_Sales.csv")
 
 OUTPUT_FOLDER = Path("output")
@@ -73,10 +73,12 @@ def main():
     # transformed_data_week = Dataset(transformed_data)
 
     # Aggregated each store to same month (ignore type-checker error on .to_timestamp())
-    # temp["Date"] = pd.to_datetime(temp["Date"]).dt.to_period("M")
-    # transformed_data = temp.groupby("Date").mean()
-    # transformed_data.index = transformed_data.index.to_timestamp()
-    # transformed_data_month = Dataset(transformed_data)
+    transformed = walmart_data.normalize() #normalize
+    temp = transformed.sort_values("Date") #sort
+    temp["Date"] = pd.to_datetime(temp["Date"]).dt.to_period("M") #drop day
+    transformed_data = temp.groupby("Date").mean() #average all features in same month
+    transformed_data.index = transformed_data.index.to_timestamp() #back to timestamp for plot
+    transformed_data_month = Dataset(transformed_data)
 
     #######################################
     #        Top K In Each Column         #
@@ -92,190 +94,7 @@ def main():
     #     temp_data = walmart_data.nlargest(10, column=select_columns[i])
     #     temp_data.to_csv(output_column_paths[i],index=False)  
 
-    #######################################
-    #             Quick Plot              #
-    #######################################
-    # transformed = walmart_data.normalize()
-    # temp = transformed.sort_values("Date")
-    # temp["Date"] = pd.to_datetime(temp["Date"]).dt.to_period("M")
-    # transformed_data = temp.groupby("Date").mean()
-    # transformed_data.index = transformed_data.index.to_timestamp()
-    # transformed_data_month = Dataset(transformed_data)
-    # print(transformed_data_month.index)
-
-    # x = transformed_data_month.data.index
-    # y = transformed_data_month.data["Weekly_Sales"]
-    # log_y = np.log1p(transformed_data_month.data["Weekly_Sales"])
-
-    # plt.scatter(x,y)
-    # plt.show()
-
-    # plt.scatter(x, log_y)
-    # plt.show()
-
-    #######################################
-    #           Model Testing             #
-    #######################################
-    # run_models(data=walmart_data, k_folds=NUM_FOLDS, n_trees=NUM_TREES, seed=RNG_SEED, alpha_learning=ALPHA_LEARNING)
-    model_dataset = walmart_data.model_pipeline(scale = True)
-    data = model_dataset.data
-    data = data.sort_values("Date_Continuous")
-
-    # print(walmart_data.head(2))
-    # print(model_dataset.head())
-    # print(model_dataset.columns)
-
-    linear = LinearRegression()
-    lasso = Lasso(random_state=RNG_SEED)
-    ridge = Ridge(random_state=RNG_SEED)
-    decision = DecisionTreeRegressor(splitter="best")
-    forest = RandomForestRegressor(n_estimators = NUM_TREES, random_state = RNG_SEED)
-    adaboost = AdaBoostRegressor(n_estimators = NUM_TREES, learning_rate = ALPHA_LEARNING, random_state = RNG_SEED)
-    xgboost = xgb.XGBRegressor(n_estimators = NUM_TREES, learning_rate = ALPHA_LEARNING, random_state = RNG_SEED)
-
-    models = {
-        "Linear": linear,
-        "Lasso": lasso,
-        "Ridge": ridge,
-        "Decision": decision,
-        "Random Forest": forest,
-        "Ada Boost Regression": adaboost,
-        "XG Boost Regression": xgboost
-    }
-
-    performance = {}
-
-    col = [
-        "Date", 
-        'month', 
-        "Weekly_Sales", 
-        "Store",
-        "Log_Weekly_Sales"
-    ]
-    x = data.drop(columns=col, axis=1)
-    y = data["Log_Weekly_Sales"]
-    
-    print("\nAll new features")
-    for model_name, model in models.items():
-        perf_dict = cross_validate(x=x, y=y, model = model, folds = NUM_FOLDS)
-        # perf_dict = single_run(x=x, y=y, model=model)
-        performance[model_name] = perf_dict
-
-    pd.set_option("display.float_format", "{:.4f}".format)
-    perf_df = pd.DataFrame(performance).T 
-
-    print(perf_df)
-
-    
-    # col = [
-    #     "Cos_Month", 
-    #     "Sin_Month", 
-    #     "Peak_Season", 
-    #     'Sales_Lag_One', 
-    #     'Sales_Lag_Two', 
-    #     # 'Store_Sales_Encode',
-    #     "Log_Weekly_Sales",
-    #     "Date",
-    #     "month",
-    #     "Weekly_Sales",
-    #     "Store"
-    # ]
-    # x = data.drop(columns = col, axis = 1)
-    # # print(x.columns)
-    # y = data["Weekly_Sales"]
-
-    # # print("\nBasic features")
-    # # print("-" * 75)
-    # # for model_name, model in models.items():
-    # #     perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
-    # #     # perf_dict = single_run(x = x, y = y, model = model)
-    # #     performance[model_name] = perf_dict
-
-    # # pd.set_option("display.float_format", "{:.4f}".format)
-    # # perf_df = pd.DataFrame(performance).T 
-
-    # # print(perf_df)
-
-    # col = [
-    #     "Sales_Lag_One",
-    #     "Sales_Lag_Two",
-    #     "Peak_Season",
-    #     "Cos_Month",
-    #     "Sin_Month",
-    #     "Log_Weekly_Sales", 
-    #     "Date", 
-    #     'month', 
-    #     "Weekly_Sales", 
-    #     "Store"
-    # ]
-    # x = data.drop(columns = col, axis=1)
-    # y = data["Log_Weekly_Sales"]
-
-    # print("\nWith Log transformation on y")
-    # print("-" * 75)
-    # for model_name, model in models.items():
-    #     perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
-    #     # perf_dict = single_run(x = x, y = y, model = model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
-    # col = [
-    #     "Sales_Lag_One",
-    #     "Sales_Lag_Two",
-    #     # "Peak_Season",
-    #     "Cos_Month",
-    #     "Sin_Month",
-    #     "Log_Weekly_Sales", 
-    #     "Date", 
-    #     'month', 
-    #     "Weekly_Sales", 
-    #     "Store"
-    # ]
-    # x = data.drop(columns = col, axis=1)
-    # # y = data["Log_Weekly_Sales"]
-
-    # print("\nWith 'Peak_Season' and log transform")
-    # print("-" * 75)
-    # for model_name, model in models.items():
-    #     perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
-    #     # perf_dict = single_run(x = x, y = y, model = model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
-    # col = [
-    #     "Log_Weekly_Sales", 
-    #     "Date", 
-    #     'month', 
-    #     "Weekly_Sales", 
-    #     "Store"
-    # ]
-    # x = data.drop(columns = col, axis=1)
-    # y = data["Log_Weekly_Sales"]
-
-    # # print(np.any(y <= 0))
-    # # print(np.isnan(x).sum())
-    # # print(np.isinf(x).sum())
-
-    # print("\nWith all new features")
-    # print("-" * 75)
-    # for model_name, model in models.items():
-    #     # perf_dict = cross_validate(x = x, y = y, model = model, folds = NUM_FOLDS)
-    #     perf_dict = single_run(x = x, y = y, model = model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
+   
     #######################################
     #    Plot Feature Comparison Plots    #
     #######################################
@@ -296,7 +115,7 @@ def main():
     # print(transformed_data_month)
 
     # correlation_heatmap(dataset=walmart_data)
-    # correlation_heatmap(dataset=transformed_data_week)
+    # # correlation_heatmap(dataset=transformed_data_week)
     # correlation_heatmap(dataset=transformed_data_month)
 
     #######################################
@@ -332,6 +151,10 @@ def main():
 
     # display_pie_chart(data=walmart_data, column="Holiday_Flag", threshold = 2.8e-2, title="Distribution of Holiday Weeks")
 
+    #######################################
+    #           Model Testing             #
+    #######################################
+    # run_models(dataset=walmart_data, k_folds=NUM_FOLDS, n_trees=NUM_TREES, seed=RNG_SEED, alpha_learning=ALPHA_LEARNING)
 
 if __name__ == "__main__":
     start_time = time.time()

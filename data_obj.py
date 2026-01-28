@@ -71,9 +71,9 @@ class Dataset:
         global_mean = data['Log_Weekly_Sales'].mean() # First entry is global
         data['Store_Sales_Encode'] = ((cumulative_sum + smoothing_factor * global_mean) / (cumulative_count + smoothing_factor)).fillna(global_mean) 
 
-        data["Peak_Season"] = data['month'].apply(lambda x: 1 if x in [10, 11, 12] else 0)
+        data["Peak_Season"] = data['month'].apply(lambda x: 1 if x in [11, 12] else 0)
         
-        data = data.drop(columns = ["Date", 'month', "Weekly_Sales", "Store"])
+        # data = data.drop(columns = ["Date", 'month', "Weekly_Sales", "Store"])
 
         if scale:
             to_scale = [
@@ -96,6 +96,9 @@ class Dataset:
     # Wrapper functions
     def info(self):
         return self.data.info()   
+    
+    def drop_duplicates(self):
+        self.data = self.data.drop_duplicates()
     
     @property
     def columns(self):
