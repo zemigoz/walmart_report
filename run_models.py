@@ -1,11 +1,13 @@
+import re
+import time
+import math
+
 import pandas as pd
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-import time
 import kagglehub
-import math
 import seaborn as ss
 import xgboost as xgb
 
@@ -25,10 +27,12 @@ from data_obj import *
 from data_display import *
 from models import *
 
-def run_models(dataset: Dataset, k_folds: int, n_trees: int, seed: int, alpha_learning: float):
+def run_models(dataset: Dataset, k_folds: int, n_trees: int, seed: int, alpha_learning: float, validate_size = 0.2):
     model_dataset = dataset.model_pipeline(scale = True)
     data = model_dataset.data
     data = data.sort_values("Date_Continuous")
+    columns = data.columns
+    store_encode_cols = [col for col in columns if re.search(r"Store_\d+", col)]
 
     # print(walmart_data.head(2))
     # print(model_dataset.head())
@@ -60,15 +64,15 @@ def run_models(dataset: Dataset, k_folds: int, n_trees: int, seed: int, alpha_le
     #     "Peak_Season", 
     #     'Sales_Lag_One', 
     #     'Sales_Lag_Two', 
-    #     'Store_Sales_Encode',
     #     "Log_Weekly_Sales",
     #     "Date",
     #     "month",
     #     "Weekly_Sales",
     #     "Store"
     # ]
+    # # col.extend(store_encode_cols)
     # x = data.drop(columns=col, axis=1)
-    # y = data["Weekly_Sales"]
+    # y = data["Log_Weekly_Sales"]
     
     # print("\nBasic features")
     # print("-" * 64)
@@ -82,120 +86,7 @@ def run_models(dataset: Dataset, k_folds: int, n_trees: int, seed: int, alpha_le
 
     # print(perf_df)
 
-
-    # col = [
-    #     "Cos_Month", 
-    #     "Sin_Month", 
-    #     "Peak_Season", 
-    #     'Sales_Lag_One', 
-    #     'Sales_Lag_Two', 
-    #     'Store_Sales_Encode',
-    #     "Log_Weekly_Sales",
-    #     "Date",
-    #     "month",
-    #     "Weekly_Sales",
-    #     "Store"
-    # ]
-    # x = data.drop(columns=col, axis=1)
-    # y = data["Log_Weekly_Sales"]
-    
-    # print("\nLog Transform on Weekly_Sales (y)")
-    # print("-" * 64)
-    # for model_name, model in models.items():
-    #     perf_dict = cross_validate(x=x, y=y, model = model, folds = k_folds)
-    #     # perf_dict = single_run(x=x, y=y, model=model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
-    # col = [
-    #     "Cos_Month", 
-    #     "Sin_Month", 
-    #     # "Peak_Season", 
-    #     'Sales_Lag_One', 
-    #     'Sales_Lag_Two', 
-    #     'Store_Sales_Encode',
-    #     "Log_Weekly_Sales",
-    #     "Date",
-    #     "month",
-    #     "Weekly_Sales",
-    #     "Store"
-    # ]
-    # x = data.drop(columns=col, axis=1)
-    # y = data["Log_Weekly_Sales"]
-    
-    # print("\nLog_Weekly_Sales, Peak_Season")
-    # print("-" * 64)
-    # for model_name, model in models.items():
-    #     perf_dict = cross_validate(x=x, y=y, model = model, folds = k_folds)
-    #     # perf_dict = single_run(x=x, y=y, model=model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
-
-    # col = [
-    #     # "Cos_Month", 
-    #     # "Sin_Month", 
-    #     "Peak_Season", 
-    #     'Sales_Lag_One', 
-    #     'Sales_Lag_Two', 
-    #     'Store_Sales_Encode',
-    #     "Log_Weekly_Sales",
-    #     "Date",
-    #     "month",
-    #     "Weekly_Sales",
-    #     "Store"
-    # ]
-    # x = data.drop(columns=col, axis=1)
-    # y = data["Log_Weekly_Sales"]
-    
-    # print("\nLog_Weekly_Sales, Cos_Month, Sin_Month")
-    # print("-" * 64)
-    # for model_name, model in models.items():
-    #     perf_dict = cross_validate(x=x, y=y, model = model, folds = k_folds)
-    #     # perf_dict = single_run(x=x, y=y, model=model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
-    # col = [
-    #     "Cos_Month", 
-    #     "Sin_Month", 
-    #     "Peak_Season", 
-    #     # 'Sales_Lag_One', 
-    #     # 'Sales_Lag_Two', 
-    #     'Store_Sales_Encode',
-    #     "Log_Weekly_Sales",
-    #     "Date",
-    #     "month",
-    #     "Weekly_Sales",
-    #     "Store"
-    # ]
-    # x = data.drop(columns=col, axis=1)
-    # y = data["Log_Weekly_Sales"]
-    
-    # print("\nLog_Weekly_Sales, Sales_Lag_One, Sales_Lag_Two")
-    # print("-" * 64)
-    # for model_name, model in models.items():
-    #     perf_dict = cross_validate(x=x, y=y, model = model, folds = k_folds)
-    #     # perf_dict = single_run(x=x, y=y, model=model)
-    #     performance[model_name] = perf_dict
-
-    # pd.set_option("display.float_format", "{:.4f}".format)
-    # perf_df = pd.DataFrame(performance).T 
-
-    # print(perf_df)
-
+    #####################################
     col = [
         "Date", 
         'month', 
@@ -209,7 +100,7 @@ def run_models(dataset: Dataset, k_folds: int, n_trees: int, seed: int, alpha_le
     print("\nAll new features")
     print("-" * 64)
     for model_name, model in models.items():
-        perf_dict = cross_validate(x=x, y=y, model = model, folds = k_folds)
+        perf_dict = cross_validate(x=x, y=y, model = model, folds = k_folds, validation_size = validate_size)
         # perf_dict = single_run(x=x, y=y, model=model)
         performance[model_name] = perf_dict
 

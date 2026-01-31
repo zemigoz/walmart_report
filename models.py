@@ -1,4 +1,5 @@
 import numpy as np
+import time
 
 from sklearn.ensemble import GradientBoostingRegressor, AdaBoostRegressor
 from sklearn.model_selection import train_test_split
@@ -6,50 +7,29 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.linear_model import LinearRegression, Lasso, Ridge, ElasticNet
 from sklearn.model_selection import train_test_split, KFold, TimeSeriesSplit, cross_val_score
 from sklearn.base import BaseEstimator, RegressorMixin
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import TargetEncoder
 
 from typing import Callable
 from data_obj import Dataset
 
 Metric = Callable[..., float]
 
-def cross_validate(x, y, model: BaseEstimator, folds: int):
-    # model = Ridge(alpha=1.0)
-    # data = dataset.data
+def cross_validate(x, y, model: BaseEstimator, folds: int, validation_size = 0.2):
+    start_time = time.time()
+    x_training, x_val, y_training, y_val = train_test_split(x, y, test_size = validation_size, shuffle=False)
     tscv = TimeSeriesSplit(n_splits = folds)
-
-    # cv_scores = cross_val_score(model, X, y, cv=tscv, scoring='neg_root_mean_squared_error')
-
-    # if shuffle:
-    #     k_folds = KFold(n_splits=folds, shuffle=True, random_state=seed) # TIME SERIES DONT SHUFFLE
-    # else:
-    #     k_folds = KFold(n_splits=folds)
-    # val = False
 
     mse_list = []
     mae_list = []
     r_squared_list = []
 
-    for train_idx, test_idx in tscv.split(x):
-        # y = data["Weekly_Sales"]
-        # x = data.drop("Weekly_Sales", axis=1)
-        # print(y.head())
-        # print(x.head())
-
-        x_train, y_train = x.iloc[train_idx], y.iloc[train_idx]
-        x_test, y_test = x.iloc[test_idx], y.iloc[test_idx]
-        # a = np.isnan(x_test).sum().sum()
-        # b = np.isnan(x_train).sum().sum()
-        # if a > 0 or b > 0:
-        #     val = True
+    for train_idx, test_idx in tscv.split(x_training):
+        x_train, y_train = x_training.iloc[train_idx], y_training.iloc[train_idx]
+        x_test, y_test = x_training.iloc[test_idx], y_training.iloc[test_idx]
 
         model.fit(x_train, y_train)
-
         predicted = model.predict(x_test)
-        # c = np.isnan(predicted).sum().sum()
-        # if c > 0:
-        #     val = True
-        #     print(x_test)
-        # print(val)
 
         mse = mean_squared_error(y_test, predicted)
         mae = mean_absolute_error(y_test, predicted)
@@ -62,10 +42,26 @@ def cross_validate(x, y, model: BaseEstimator, folds: int):
     avg_mse = sum(mse_list) / len(mse_list)
     avg_mae = sum(mae_list) / len(mae_list)
     avg_r_squared = sum(r_squared_list) / len(r_squared_list)
-    # print( mse_list)
-    # print( r_squared_list)
-    
-    return {"MSE": avg_mse, "MAE": avg_mae, "R2": avg_r_squared}
+    # train_metrics = {"MSE": avg_mse, "MAE": avg_mae, "R2": avg_r_squared}
+
+    predicted = model.predict(x_val)
+    mse = mean_squared_error(y_val, predicted)
+    mae = mean_absolute_error(y_val, predicted)
+    r2 = r2_score(y_val, predicted)
+    total_time = time.time() - start_time
+
+    # val_metrics = {"MSE": mse, "MAE": mae, "R2": r2}
+
+    return {
+        "Train_MSE": avg_mse, 
+        "Train_MAE": avg_mae, 
+        "Train_R2": avg_r_squared, 
+        "Validation_MSE": mse, 
+        "Validation_MAE": mae, 
+        "Validation_R2": r2,
+        "Runtime": total_time
+    }
+    # return {"train_metrics": train_metrics, "val_metrics": val_metrics}
 
 
 def single_run(x, y, model: BaseEstimator, test_size = 0.2):

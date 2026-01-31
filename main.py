@@ -53,6 +53,7 @@ def main():
     del to_wrap
 
     walmart_data.to_datetime(column="Date", dayfirst=True)
+    # print(len(walmart_data))
 
     null_counts = walmart_data.isnull().any(axis=1).sum()
     num_duplicates = walmart_data.data.duplicated().sum()
@@ -78,6 +79,8 @@ def main():
 
     OUTPUT_FOLDER.mkdir(parents=True, exist_ok=True)
     STORE_FOLDER.mkdir(parents=True, exist_ok=True)
+
+    # print(walmart_data.columns)
 
     #######################################
     #        Top K In Each Column         #
@@ -165,7 +168,7 @@ def main():
     #######################################
     #           Model Testing             #
     #######################################
-    output_file = OUTPUT_FOLDER / Path("all_model_metrics.csv")
+    output_file = OUTPUT_FOLDER / Path("all_feature_models_metrics.csv")
 
     perf_df = run_models(dataset=walmart_data, k_folds=NUM_FOLDS, n_trees=NUM_TREES, seed=RNG_SEED, alpha_learning=ALPHA_LEARNING)
     perf_df = perf_df.reset_index()

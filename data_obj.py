@@ -6,7 +6,9 @@ import time
 import kagglehub
 
 from pathlib import Path
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, TargetEncoder, OneHotEncoder
+from sklearn.compose import ColumnTransformer
+# from sklearn.preprocessing import TargetEncoder
 
 class Dataset:
     def __init__(self, data: pd.DataFrame) -> None:
@@ -69,7 +71,9 @@ class Dataset:
         cumulative_count = data.groupby('Store').cumcount()
 
         global_mean = data['Log_Weekly_Sales'].mean() # First entry is global
-        data['Store_Sales_Encode'] = ((cumulative_sum + smoothing_factor * global_mean) / (cumulative_count + smoothing_factor)).fillna(global_mean) 
+
+        # store_encode = TargetEncoder()
+        # data['Store_Sales_Encode'] = ((cumulative_sum + smoothing_factor * global_mean) / (cumulative_count + smoothing_factor)).fillna(global_mean) 
 
         data["Peak_Season"] = data['month'].apply(lambda x: 1 if x in [11, 12] else 0)
         
@@ -85,10 +89,25 @@ class Dataset:
                 'Date_Continuous', 
                 'Sales_Lag_One', 
                 'Sales_Lag_Two',
-                'Store_Sales_Encode'
+                # 'Store_Sales_Encode'
             ]
 
             data[to_scale] = StandardScaler().fit_transform(data[to_scale])
+
+        encoder = OneHotEncoder(
+            drop='first',
+            sparse_output=False
+        )
+
+        store_ohe = encoder.fit_transform(data[['Store']])
+
+        store_ohe_df = pd.DataFrame(
+            store_ohe,
+            columns=encoder.get_feature_names_out(['Store']),
+            index=data.index
+        )
+
+        data = pd.concat([data, store_ohe_df], axis=1)
 
         return Dataset(data=data)
 
