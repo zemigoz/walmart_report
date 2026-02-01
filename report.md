@@ -15,7 +15,10 @@ Link To [Dataset](https://www.kaggle.com/datasets/mikhail1681/walmart-sales): ht
     - [Results](#results)
       - [Basic Features](#basic-features)
       - [All Features](#all-features)
+      - [Improvements](#improvements)
+    - [Model Analysis](#model-analysis)
   - [Discussion](#discussion)
+  - [References](#references)
 
 
 ## Introduction To The Report
@@ -159,15 +162,35 @@ We run 2 experiments on `RNG_SEED = 314` with the same hyperparameters previousl
 | Decision              | 0.0272    | 0.1051    | 0.9257   | 0.0132         | 0.0863         | 0.9599        | 0.3084  |
 | Random Forest        | 0.0152    | **0.0772**    | 0.9591   | **0.0050**         | **0.0527**         | 0.9847        | 18.4238 |
 | Ada Boost Regression | 0.0198    | 0.0955    | 0.9463   | 0.0088         | 0.0733         | 0.9734        | 6.5399  |
-| XG Boost Regression  | 0.0173    | 0.0805    | 0.9534   | 0.0050         | 0.0536         | **0.9848**        | 4.3997  |
+| XG Boost Regression  | 0.0173    | 0.0805    | 0.9534   | **0.0050**         | 0.0536         | **0.9848**        | 4.3997  |
 
+#### Improvements
+| Metric             | Best Model (Basic) | Best Model (All Features) | Improvement (%) |
+|-------------------|------------------|---------------------------|----------------|
+| Train_MSE          | Ridge    | Ridge            | 27.7          |
+| Train_MAE          | Linear   | Random Forest    | 20.9          |
+| Train_R2           | Linear   | Ridge            | 1.38          |
+| Validation_MSE     | Linear   | Random Forest/XGBoost  | 53.3    |
+| Validation_MAE     | Linear   | Random Forest    | 32.1          |
+| Validation_R2      | Linear   | XGBoost          | 1.81          |
+<!-- | Runtime (s)        | Ridge    | Ridge            | 22.9          | -->
+
+### Model Analysis
+
+The strides to respect temporality paid dividends. The results in [Basic Features](#basic-features) show very good results. However, the L1 regularization shrunk the coefficients of Lasso regression to the point of infeasibility with the model. Other models such as Linear, Ridge, Random Forest, and XG Boost performed amazingly. The standout was Linear regression where it outperformed every other model in every metric but runtime against Ridge regression. The L2 regularization shrunk the coefficients appropriately and improved numeric calculation. No models demonstrated overfitting between training and validation metrics. 
+
+The [All Features](#all-features) table exemplifies the same self-destruction of Lasso regression, leaving it useless for further analysis. The features engineered in [Feature Pipeline](#feature-pipeline) prove quite helpful with the increase of every metric for every model beside runtime. Models that were clearly outperformed in [Basic Features](#basic-features) present an argument as every model fair nearly identical & perfect metrics. 
+
+The least impactful improvement, seen in [Improvements](#improvements), is the 1.81% improvement in $r^2$ from the Linear to XG Boost model. What may first seem as a Linear regression problem suddenly advantegous for ensemble/boost models as seen in validation MSE & MAE. Ensemble/boost models prefer the new features as they capture non-linear trends and a better temporal context than otherwise without.
 
 ## Discussion
 
-pca reduction/dimensionality reduction
+It is advised to use a Linear regression model if minimal feature engineering is used. If a larger dataset is prepared, consider testing Linear versus Ridge regression for a runtime versus performance tradeoff. The discussion for best model using all features questions one's priorities. XG Boost performs best in 2 of 3 validation metrics yet Ridge regression claims the runtime title, leaving both models as the best option depending on the runtime/performance need.
 
-data leakage of median
+This experiment handles a good amount of introductory statistical/machine modeling work. However, it leaves many questions and further investigation behind. Firstly, the model may be overly complex. Exploring dimensionality reduction could be useful, even if only using PCA, as linear models already demonstrate strong performance. There is also a slight data leakage with the first 2 entries of the lag features utilizing the median. To prevent this, consider dropping the first 2 entries to completely avoid data leakage.
 
-RF and XG boost perform best but for times sake, pick XG. If time is of bigger constraint, linear/Ridge do just great
+The results of these experiments confidently solve the regressional problem. Further insight into each model is up to the reader but may peak interest such as how the decision tree splits or the regularization terms of ridge regression. More preparation and analysis for the effects of time is always useful and referred to in [References](#references). 
+
+## References
 
 https://online.stat.psu.edu/stat501/book/export/html/995
