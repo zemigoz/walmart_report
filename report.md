@@ -29,9 +29,16 @@ The goal of this report aims to explore a Walmart dataset and model it with stat
 
 The code is spread across 5 Python files. To run the code, first check if Python is installed with `python --version`. Untested if older Python versions would work (3.10+ should reasonably work) but the environment was scripted in Python 3.13.11. You can download Python [here](https://www.python.org/downloads/).
 
-Ensure the [Walmart dataset](https://www.kaggle.com/datasets/mikhail1681/walmart-sales) is downloaded and within the same directory/folder as this *README.md*.
+Ensure the [Walmart dataset](https://www.kaggle.com/datasets/mikhail1681/walmart-sales) is downloaded and within the same directory/folder as this *report.md*.
 
-Code chunks are commented out in *main.py* with labels to run particular tasks. Uncomment the desired code tasks and run the file in the directory/folder of this *README.md* with 
+Next check if `conda` is installed using `conda --version`. If not, install it through [here](https://docs.conda.io/projects/conda/en/latest/user-guide/install/). Run the following once `conda` is setup:
+
+```
+conda env create -f environment.yml -n walmart_data
+conda activate walmart_data
+```
+
+Code chunks are commented out in *main.py* with labels to run particular tasks. Uncomment the desired code tasks and run the file in the directory/folder of this *report.md* with 
 
 ```
 python main.py
